@@ -1,10 +1,12 @@
 import json
 import random
-import numpy
+import tg_utils
+import string
 
 
 class TextGenerator:
     endings = ['.', '!', '?']
+    sentence_number_in_paragraph = 15
 
     def __init__(self, output_path):
         self.output_path = output_path
@@ -19,10 +21,19 @@ class TextGenerator:
         last_words = ["", "."]
         for i in range(size):
             current_word = self.gen_word(last_words)
-            text += " " + current_word
-            last_words = last_words[1:] + [current_word.lower()]
+            if current_word in self.endings:
+                if random.sample(range(self.sentence_number_in_paragraph), 1)[0] == 1:
+                    current_word += "\n    "
 
-        return text
+            text += " " + current_word
+            last_words = last_words[1:] + [current_word.lower().strip()]
+
+        return self.polish_text(text)
+
+    def polish_text(self, text):
+        for ending in self.endings:
+            text = text.replace(" " + ending, ending, 100000000)
+        return "    " + text
 
     def gen_word(self, last_words):
         new_word = ""
@@ -30,13 +41,14 @@ class TextGenerator:
             new_word = random.sample(self.stat.keys(), 1)[0].title()
         elif last_words[-2] in self.endings:
             dic = self.stat[last_words[-1]]
-            probs = [float(dic[word][".count"])/dic[".count"] for word in dic if word != ".count"]
-            new_word = random.sample([key for key in dic.keys() if key != ".count"], 1)[0] #numpy.random.choice(dic.keys(), probs)
+            dic_keys = [key for key in dic if key != ".count"]
+            probs = [dic[key][".count"] for key in dic_keys]
+            new_word = tg_utils.choose_random(dic_keys, probs)
         else:
             dic = self.stat[last_words[-2]][last_words[-1]]
-            denom = self.stat[last_words[-2]][last_words[-1]][".count"]
-            probs = [float(value)/denom for value in dic.values()]
-            new_word = random.sample([key for key in dic.keys() if key != ".count"], 1)[0] #numpy.random.choice(dic.keys(), probs)
+            dic_keys = [key for key in dic if key != ".count"]
+            probs = [dic[key] for key in dic_keys]
+            new_word = tg_utils.choose_random(dic_keys, probs)
 
         return new_word
 

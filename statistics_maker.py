@@ -10,6 +10,7 @@ class StatMaker:
         self.corpus_path = corpus_path
         self.stat_path = './statistics.json'
         self.stat = {}
+        self.trash = ["", "\"", "\'", "\d", "\t", "\n", " "]
 
     def make_stat(self):
         stat_file = open(self.stat_path, "w")
@@ -36,11 +37,12 @@ class StatMaker:
         for ending in endings:
             data = data.replace(ending, ' ' + ending, 1000000000)  #TODO
 
-        delimiters = ' ', ',', '\n', '-', '--'
+        delimiters = ' ', ',', '\n', '-', "\d", "\"", "\'", ";", "\t", "\(", "\)"
         regexPattern = '|'.join(map(re.escape, delimiters))
         return map(lambda word: word.lower(), re.split(regexPattern, data))
 
     def update_stat(self, new_data):
+        new_data = list(filter(lambda word: word.isalpha() or word in [".", "!", "?"] , new_data))
         for i in range(len(new_data) - 2):   #TODO Refactoring
             if new_data[i] not in self.stat:
                 self.stat[new_data[i]] = {new_data[i+1]: {new_data[i+2]: 1}}
